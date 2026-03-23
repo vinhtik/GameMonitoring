@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String         @id @default(cuid())
+  name              String?
+  telegramChatId    String?        @unique
+  telegramUsername  String?
+  telegramLinkToken String?        @unique
+  telegramLinkedAt  DateTime?
+  subscriptions     Subscription[]
+  notifications     Notification[]
+  createdAt         DateTime       @default(now())
+}
+
+model Item {
+  id            String         @id @default(cuid())
+  externalId    String         @unique
+  name          String
+  game          String
+  currentPrice  Float?
+  icon          String?
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String
+  itemId      String
+  targetPrice Float
+  condition   String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  userId         String
+  subscriptionId String?
+  itemName       String
+  message        String
+  type           String   @default("system")
+  priceSnapshot  Float?
+  sentAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
