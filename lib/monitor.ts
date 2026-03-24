@@ -1,16 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { sendTelegramMessage } from '@/lib/telegram'
-
-const WFM_API_BASE = 'https://api.warframe.market/v2'
-
-type WfmOrder = {
-  type?: string
-  platinum?: number
-  visible?: boolean
-  user?: {
-    status?: string
-  }
-}
+import { getGameProvider } from '@/lib/games/game-registry'
 
 function checkCondition(
   currentPrice: number,
@@ -28,43 +18,6 @@ function checkCondition(
   return false
 }
 
-async function fetchCurrentPriceBySlug(slug: string): Promise<number | null> {
-  try {
-    const response = await fetch(`${WFM_API_BASE}/orders/item/${slug}`, {
-      headers: {
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-    })
-
-    if (!response.ok) {
-      console.error(`Orders request failed for ${slug}: ${response.status}`)
-      return null
-    }
-
-    const raw = await response.json()
-    const orders: WfmOrder[] = Array.isArray(raw?.data) ? raw.data : []
-
-    const sellPrices = orders
-      .filter((order) => {
-        const isSell = order.type === 'sell'
-        const isVisible = order.visible !== false
-        return isSell && isVisible && typeof order.platinum === 'number'
-      })
-      .map((order) => Number(order.platinum))
-      .filter((price) => Number.isFinite(price))
-
-    if (!sellPrices.length) {
-      return null
-    }
-
-    return Math.min(...sellPrices)
-  } catch (error) {
-    console.error(`Failed to fetch current price for slug "${slug}":`, error)
-    return null
-  }
-}
-
 export async function runMonitor() {
   const subscriptions = await prisma.subscription.findMany({
     where: { isActive: true },
@@ -80,12 +33,20 @@ export async function runMonitor() {
   console.log(`Subscriptions loaded: ${subscriptions.length}`)
 
   for (const subscription of subscriptions) {
-    const slug = subscription.item.externalId
+    const provider = getGameProvider(subscription.item.game.toLowerCase())
 
+    if (!provider) {
+      console.log(
+        `Skip ${subscription.id}: no provider for game "${subscription.item.game}"`
+      )
+      continue
+    }
+
+    const externalId = subscription.item.externalId
     let currentPrice = subscription.item.currentPrice
 
-    if (slug) {
-      const freshPrice = await fetchCurrentPriceBySlug(slug)
+    if (externalId) {
+      const freshPrice = await provider.getCurrentPrice(externalId)
 
       if (freshPrice !== null) {
         currentPrice = freshPrice
@@ -100,7 +61,7 @@ export async function runMonitor() {
     }
 
     console.log(
-      `Checking subscription ${subscription.id}: item="${subscription.item.name}", slug="${slug}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, telegramChatId=${subscription.user.telegramChatId}`
+      `Checking subscription ${subscription.id}: game="${subscription.item.game}", item="${subscription.item.name}", externalId="${externalId}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, telegramChatId=${subscription.user.telegramChatId}`
     )
 
     if (currentPrice === null || currentPrice === undefined) {
@@ -146,6 +107,7 @@ export async function runMonitor() {
 
     const triggerMessage =
       `Сработала подписка\n\n` +
+      `Игра: ${subscription.item.game}\n` +
       `Предмет: ${subscription.item.name}\n` +
       `Текущая цена: ${currentPrice}\n` +
       `Условие: ${subscription.condition === 'lte' ? '≤' : '≥'} ${subscription.targetPrice}`

@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCurrentUser } from '@/lib/current-user'
+import { getCurrentUser } from '@/lib/current-user'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const user = await requireCurrentUser()
+    const user = await getCurrentUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     return NextResponse.json(user)
   } catch (error) {
     console.error('GET /api/profile error:', error)
 
     return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
+      { error: 'Failed to load profile' },
+      { status: 500 }
     )
   }
 }
@@ -20,7 +24,11 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const currentUser = await requireCurrentUser()
+    const currentUser = await getCurrentUser()
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const name = typeof body.name === 'string' ? body.name.trim() : undefined
 
@@ -36,7 +44,7 @@ export async function PATCH(request: NextRequest) {
     console.error('PATCH /api/profile error:', error)
 
     return NextResponse.json(
-      { error: 'Unauthorized or failed to update profile' },
+      { error: 'Failed to update profile' },
       { status: 500 }
     )
   }

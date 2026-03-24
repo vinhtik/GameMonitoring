@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { getEnabledGameProvider } from '@/lib/games/game-registry'
 
 type Item = {
   id: string
@@ -48,10 +49,10 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
-function getImageUrl(path?: string | null) {
-  if (!path) return null
-  if (path.startsWith('http://') || path.startsWith('https://')) return path
-  return `https://warframe.market/static/assets/${path}`
+function getImageUrl(path?: string | null, gameId: string = 'warframe') {
+  const provider = getEnabledGameProvider(gameId)
+  if (!provider) return path ?? null
+  return provider.getImageUrl(path)
 }
 
 function resolveGameName(gameId: string) {

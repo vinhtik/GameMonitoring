@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireCurrentUser } from '@/lib/current-user'
+import { getCurrentUser } from '@/lib/current-user'
 import { sendTelegramMessage } from '@/lib/telegram'
 
 function conditionLabel(condition: string, targetPrice: number) {
@@ -16,7 +16,11 @@ function resolveGameLabel(gameParam: string | null) {
 
 export async function GET(request: NextRequest) {
   try {
-    const currentUser = await requireCurrentUser()
+    const currentUser = await getCurrentUser()
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const gameParam = request.nextUrl.searchParams.get('game')
     const game = resolveGameLabel(gameParam)
@@ -55,7 +59,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const currentUser = await requireCurrentUser()
+    const currentUser = await getCurrentUser()
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const itemId = String(body.itemId ?? '').trim()
     const targetPrice = Number(body.targetPrice)
@@ -160,7 +168,12 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const currentUser = await requireCurrentUser()
+    const currentUser = await getCurrentUser()
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const subscriptionId = request.nextUrl.searchParams.get('id')?.trim() ?? ''
 
     if (!subscriptionId) {

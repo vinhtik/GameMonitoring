@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireCurrentUser } from '@/lib/current-user'
+import { getCurrentUser } from '@/lib/current-user'
 
 function createToken() {
   return crypto.randomUUID().replace(/-/g, '')
@@ -9,6 +9,7 @@ function createToken() {
 export async function POST() {
   try {
     const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME
+
     if (!botUsername) {
       return NextResponse.json(
         { error: 'NEXT_PUBLIC_TELEGRAM_BOT_NAME is not set' },
@@ -16,7 +17,12 @@ export async function POST() {
       )
     }
 
-    const user = await requireCurrentUser()
+    const user = await getCurrentUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const token = createToken()
 
     await prisma.user.update({

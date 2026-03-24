@@ -50,20 +50,6 @@ export default async function LoginPage({
         <div className="mt-8 rounded-2xl border border-white/10 bg-slate-900/70 p-6">
           {telegramBotName && authUrl ? (
             <>
-              <div className="space-y-2 text-sm text-slate-400">
-                <p>
-                  Бот для входа:{' '}
-                  <span className="text-white">{telegramBotName}</span>
-                </p>
-                <p>
-                  APP URL:{' '}
-                  <span className="break-all text-white">{appUrl}</span>
-                </p>
-                <p className="text-amber-300">
-                  Открывай эту страницу только через ngrok-домен, а не через
-                  localhost.
-                </p>
-              </div>
 
               <div className="mt-4" id="telegram-login-widget" />
 
@@ -86,16 +72,6 @@ export default async function LoginPage({
                 `}
               </Script>
 
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-slate-400">
-                <p>
-                  Если видишь <span className="text-white">Bot domain invalid</span>,
-                  почти всегда это значит одно из двух:
-                </p>
-                <ul className="mt-2 list-disc space-y-1 pl-5">
-                  <li>в BotFather задан не домен, а полный URL с https</li>
-                  <li>страница открыта через localhost, а не через ngrok</li>
-                </ul>
-              </div>
             </>
           ) : (
             <p className="text-sm text-slate-300">

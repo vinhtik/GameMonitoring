@@ -74,7 +74,10 @@ function getImageUrl(path?: string) {
   return `https://warframe.market/static/assets/${path}`
 }
 
-async function getItem(slug: string): Promise<ItemPayload | null> {
+async function getItem(
+  slug: string,
+  game: string = 'warframe'
+): Promise<ItemPayload | null> {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.APP_URL ||
@@ -82,7 +85,7 @@ async function getItem(slug: string): Promise<ItemPayload | null> {
 
   try {
     const response = await fetch(
-      `${baseUrl}/api/items/${encodeURIComponent(slug)}`,
+      `${baseUrl}/api/items/${encodeURIComponent(slug)}?game=${encodeURIComponent(game)}`,
       {
         cache: 'no-store',
       }
@@ -101,11 +104,14 @@ async function getItem(slug: string): Promise<ItemPayload | null> {
 
 export default async function ItemPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ game?: string }>
 }) {
   const { slug } = await params
-  const data = await getItem(slug)
+  const { game = 'warframe' } = await searchParams
+  const data = await getItem(slug, game)
 
   if (!data || !data.item) {
     notFound()
