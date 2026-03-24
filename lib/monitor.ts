@@ -164,6 +164,7 @@ export async function runMonitor() {
     await prisma.notification.create({
       data: {
         userId: subscription.userId,
+        itemId: subscription.item.id,
         subscriptionId: subscription.id,
         itemName: subscription.item.name,
         message: triggerMessage,

@@ -10,13 +10,25 @@ datasource db {
 model User {
   id                String         @id @default(cuid())
   name              String?
+  telegramId        String?        @unique
   telegramChatId    String?        @unique
   telegramUsername  String?
   telegramLinkToken String?        @unique
   telegramLinkedAt  DateTime?
   subscriptions     Subscription[]
   notifications     Notification[]
+  sessions          Session[]
   createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @default(now()) @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Item {
@@ -27,6 +39,7 @@ model Item {
   currentPrice  Float?
   icon          String?
   subscriptions Subscription[]
+  notifications Notification[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -47,6 +60,7 @@ model Subscription {
 model Notification {
   id             String   @id @default(cuid())
   userId         String
+  itemId         String
   subscriptionId String?
   itemName       String
   message        String
@@ -55,4 +69,8 @@ model Notification {
   sentAt         DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sentAt])
+  @@index([itemId])
 }

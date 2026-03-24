@@ -1,18 +1,82 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { requireCurrentUser } from '@/lib/current-user'
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage() {
+const games = [
+  { id: 'warframe', name: 'Warframe', enabled: true },
+  { id: 'cs2', name: 'CS2', enabled: false },
+  { id: 'dota2', name: 'Dota 2', enabled: false },
+]
+
+function resolveGameLabel(gameParam?: string) {
+  if (gameParam === 'warframe') return 'Warframe'
+  if (gameParam === 'cs2') return 'CS2'
+  if (gameParam === 'dota2') return 'Dota 2'
+  return 'Warframe'
+}
+
+function resolveGameId(gameParam?: string) {
+  if (gameParam === 'warframe') return 'warframe'
+  if (gameParam === 'cs2') return 'cs2'
+  if (gameParam === 'dota2') return 'dota2'
+  return 'warframe'
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ game?: string }>
+}) {
+  const user = await requireCurrentUser()
+
+  const params = await searchParams
+  const selectedGameId = resolveGameId(params.game)
+  const selectedGameLabel = resolveGameLabel(params.game)
+
   const [itemsCount, subscriptionsCount, notificationsCount, latestNotifications] =
     await Promise.all([
-      prisma.item.count(),
-      prisma.subscription.count({
-        where: { isActive: true },
+      prisma.item.count({
+        where: {
+          game: selectedGameLabel,
+        },
       }),
-      prisma.notification.count(),
+      prisma.subscription.count({
+        where: {
+          userId: user.id,
+          isActive: true,
+          item: {
+            game: selectedGameLabel,
+          },
+        },
+      }),
+      prisma.notification.count({
+        where: {
+          userId: user.id,
+          item: {
+            game: selectedGameLabel,
+          },
+        },
+      }),
       prisma.notification.findMany({
-        orderBy: { sentAt: 'desc' },
+        where: {
+          userId: user.id,
+          item: {
+            game: selectedGameLabel,
+          },
+        },
+        include: {
+          item: {
+            select: {
+              name: true,
+              game: true,
+            },
+          },
+        },
+        orderBy: {
+          sentAt: 'desc',
+        },
         take: 5,
       }),
     ])
@@ -28,7 +92,8 @@ export default async function DashboardPage() {
             Панель мониторинга
           </h1>
           <p className="mt-2 text-slate-300">
-            Сводка по предметам, подпискам и отправленным уведомлениям.
+            Сводка по предметам, подпискам и уведомлениям для игры:{' '}
+            <span className="font-medium text-white">{selectedGameLabel}</span>
           </p>
         </div>
 
@@ -40,13 +105,48 @@ export default async function DashboardPage() {
             Главная
           </Link>
           <Link
-            href="/subscriptions"
+            href={`/subscriptions?game=${selectedGameId}`}
             className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-400"
           >
             Подписки
           </Link>
         </div>
       </header>
+
+      <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <p className="mb-3 text-sm uppercase tracking-[0.2em] text-blue-300/80">
+          Выбор игры
+        </p>
+
+        <div className="flex flex-wrap gap-3">
+          {games.map((game) => {
+            const isSelected = selectedGameId === game.id
+
+            return game.enabled ? (
+              <Link
+                key={game.id}
+                href={`/dashboard?game=${game.id}`}
+                className={`rounded-2xl px-4 py-2 text-sm transition ${
+                  isSelected
+                    ? 'bg-blue-500 text-white'
+                    : 'border border-white/10 bg-slate-900/70 text-slate-200 hover:bg-white/10'
+                }`}
+              >
+                {game.name}
+              </Link>
+            ) : (
+              <button
+                key={game.id}
+                type="button"
+                disabled
+                className="cursor-not-allowed rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-500"
+              >
+                {game.name} • скоро
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -55,14 +155,14 @@ export default async function DashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-slate-400">Активные подписки</p>
+          <p className="text-sm text-slate-400">Ваши активные подписки</p>
           <p className="mt-2 text-3xl font-bold text-white">
             {subscriptionsCount}
           </p>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-slate-400">Всего уведомлений</p>
+          <p className="text-sm text-slate-400">Ваши уведомления по игре</p>
           <p className="mt-2 text-3xl font-bold text-white">
             {notificationsCount}
           </p>
@@ -75,16 +175,12 @@ export default async function DashboardPage() {
             <h2 className="text-xl font-semibold text-white">
               Последние уведомления
             </h2>
-            <Link
-              href="/api/notifications"
-              className="text-sm text-blue-300 hover:text-blue-200"
-            >
-              Открыть API
-            </Link>
           </div>
 
           {latestNotifications.length === 0 ? (
-            <p className="text-slate-400">Уведомлений пока нет.</p>
+            <p className="text-slate-400">
+              Уведомлений для выбранной игры пока нет.
+            </p>
           ) : (
             <div className="space-y-4">
               {latestNotifications.map((notification) => (
@@ -93,11 +189,17 @@ export default async function DashboardPage() {
                   className="rounded-2xl border border-white/10 bg-slate-900/70 p-4"
                 >
                   <p className="font-medium text-white">
-                    {notification.itemName}
+                    {notification.item?.name ?? notification.itemName}
                   </p>
+
+                  <p className="mt-1 text-xs text-blue-300">
+                    {notification.item?.game ?? selectedGameLabel}
+                  </p>
+
                   <p className="mt-1 text-sm text-slate-300">
                     {notification.message}
                   </p>
+
                   <p className="mt-2 text-xs text-slate-500">
                     {new Date(notification.sentAt).toLocaleString('ru-RU')}
                   </p>
@@ -112,25 +214,25 @@ export default async function DashboardPage() {
 
           <div className="mt-5 space-y-3">
             <Link
-              href="/subscriptions"
+              href={`/subscriptions?game=${selectedGameId}`}
               className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-slate-200 transition hover:bg-white/10"
             >
               Перейти к управлению подписками
             </Link>
 
-            <a
-              href="/api/items"
+            <Link
+              href="/profile"
               className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-slate-200 transition hover:bg-white/10"
             >
-              Посмотреть предметы через API
-            </a>
+              Открыть профиль
+            </Link>
 
-            <a
-              href="/api/notifications"
+            <Link
+              href="/"
               className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-slate-200 transition hover:bg-white/10"
             >
-              Посмотреть уведомления через API
-            </a>
+              Вернуться на главную
+            </Link>
           </div>
         </div>
       </section>

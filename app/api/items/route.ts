@@ -19,13 +19,20 @@ type WfmOrder = {
   type?: string
   platinum?: number
   visible?: boolean
-  user?: {
-    status?: string
-  }
 }
 
 function normalize(value: string) {
   return value.trim().toLowerCase()
+}
+
+function resolveGame(gameParam: string | null) {
+  const game = (gameParam ?? 'warframe').trim().toLowerCase()
+
+  return {
+    gameId: game,
+    gameLabel: game === 'warframe' ? 'Warframe' : null,
+    isSupported: game === 'warframe',
+  }
 }
 
 async function getCurrentPrice(slug: string): Promise<number | null> {
@@ -68,8 +75,18 @@ async function getCurrentPrice(slug: string): Promise<number | null> {
 export async function GET(request: NextRequest) {
   try {
     const query = request.nextUrl.searchParams.get('q')?.trim() ?? ''
+    const gameParam = request.nextUrl.searchParams.get('game')
+
+    const { gameLabel, isSupported } = resolveGame(gameParam)
 
     if (!query) {
+      return NextResponse.json({
+        items: [],
+        total: 0,
+      })
+    }
+
+    if (!isSupported || !gameLabel) {
       return NextResponse.json({
         items: [],
         total: 0,
@@ -93,12 +110,16 @@ export async function GET(request: NextRequest) {
     const raw = await response.json()
     const sourceItems: WfmItem[] = Array.isArray(raw?.data) ? raw.data : []
 
+    const normalizedQuery = normalize(query)
+
     const filtered = sourceItems.filter((item) => {
       const name = item.i18n?.en?.name ?? ''
       const slug = item.slug ?? ''
-      const q = normalize(query)
 
-      return normalize(name).includes(q) || normalize(slug).includes(q)
+      return (
+        normalize(name).includes(normalizedQuery) ||
+        normalize(slug).includes(normalizedQuery)
+      )
     })
 
     const limited = filtered.slice(0, 10)
@@ -114,14 +135,14 @@ export async function GET(request: NextRequest) {
           where: { externalId },
           update: {
             name,
-            game: 'Warframe',
+            game: gameLabel,
             currentPrice,
             icon,
           },
           create: {
             externalId,
             name,
-            game: 'Warframe',
+            game: gameLabel,
             currentPrice,
             icon,
           },

@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Profile = {
   id: string
   name: string | null
+  telegramId: string | null
   telegramChatId: string | null
   telegramUsername: string | null
   telegramLinkedAt: string | null
@@ -19,12 +21,15 @@ function formatDate(value: string) {
 }
 
 export default function ProfilePage() {
+  const router = useRouter()
+
   const [profile, setProfile] = useState<Profile | null>(null)
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   const [telegramLink, setTelegramLink] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   async function loadProfile() {
     setLoading(true)
@@ -33,6 +38,16 @@ export default function ProfilePage() {
     try {
       const res = await fetch('/api/profile', { cache: 'no-store' })
       const data = await res.json()
+
+      if (res.status === 401) {
+        router.push('/login?error=unauthorized')
+        return
+      }
+
+      if (!res.ok) {
+        setMessage(data.error ?? 'Не удалось загрузить профиль')
+        return
+      }
 
       setProfile(data)
       setName(data?.name ?? '')
@@ -63,6 +78,11 @@ export default function ProfilePage() {
 
       const data = await res.json()
 
+      if (res.status === 401) {
+        router.push('/login?error=unauthorized')
+        return
+      }
+
       if (!res.ok) {
         setMessage(data.error ?? 'Не удалось сохранить профиль')
         return
@@ -87,6 +107,11 @@ export default function ProfilePage() {
 
       const data = await res.json()
 
+      if (res.status === 401) {
+        router.push('/login?error=unauthorized')
+        return
+      }
+
       if (!res.ok) {
         setMessage(data.error ?? 'Не удалось создать ссылку')
         return
@@ -96,6 +121,29 @@ export default function ProfilePage() {
       setMessage('Ссылка для привязки создана')
     } catch {
       setMessage('Ошибка генерации Telegram-ссылки')
+    }
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    setMessage('')
+
+    try {
+      const res = await fetch('/api/logout', {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        setMessage('Не удалось выйти из аккаунта')
+        return
+      }
+
+      router.push('/login')
+      router.refresh()
+    } catch {
+      setMessage('Ошибка выхода из аккаунта')
+    } finally {
+      setLoggingOut(false)
     }
   }
 
@@ -124,17 +172,25 @@ export default function ProfilePage() {
 
         <div className="flex gap-3">
           <Link
-            href="/subscriptions"
+            href="/subscriptions?game=warframe"
             className="rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
           >
             Подписки
           </Link>
           <Link
-            href="/dashboard"
+            href="/dashboard?game=warframe"
             className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-400"
           >
             Dashboard
           </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20 disabled:opacity-60"
+          >
+            {loggingOut ? 'Выход...' : 'Выйти'}
+          </button>
         </div>
       </header>
 
@@ -165,8 +221,7 @@ export default function ProfilePage() {
 
           <div className="mt-5 space-y-3 text-sm text-slate-300">
             <p>
-              Статус:{' '}
-              {profile?.telegramChatId ? 'привязан' : 'не привязан'}
+              Статус: {profile?.telegramId ? 'вход через Telegram выполнен' : 'не авторизован'}
             </p>
 
             <p>
@@ -192,7 +247,7 @@ export default function ProfilePage() {
               onClick={handleGenerateTelegramLink}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-medium text-slate-200 transition hover:bg-white/10"
             >
-              Создать ссылку для привязки Telegram
+              Создать ссылку для привязки Telegram-бота
             </button>
 
             {telegramLink ? (

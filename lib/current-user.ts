@@ -1,17 +1,30 @@
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 
-export async function getOrCreateCurrentUser() {
-  const existing = await prisma.user.findFirst({
-    orderBy: { createdAt: 'asc' },
-  })
+export const authCookieName = 'user_id'
 
-  if (existing) {
-    return existing
+export async function getCurrentUser() {
+  const cookieStore = await cookies()
+  const userId = cookieStore.get(authCookieName)?.value
+
+  if (!userId) {
+    return null
   }
 
-  return prisma.user.create({
-    data: {
-      name: 'Local User',
-    },
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
   })
+
+  return user
+}
+
+export async function requireCurrentUser() {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    redirect('/login?error=unauthorized')
+  }
+
+  return user
 }

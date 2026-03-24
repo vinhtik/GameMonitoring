@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type Item = {
   id: string
@@ -34,6 +35,12 @@ type Subscription = {
   }
 }
 
+const games = [
+  { id: 'warframe', name: 'Warframe', enabled: true },
+  { id: 'cs2', name: 'CS2', enabled: false },
+  { id: 'dota2', name: 'Dota 2', enabled: false },
+]
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     dateStyle: 'short',
@@ -45,6 +52,13 @@ function getImageUrl(path?: string | null) {
   if (!path) return null
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   return `https://warframe.market/static/assets/${path}`
+}
+
+function resolveGameName(gameId: string) {
+  if (gameId === 'warframe') return 'Warframe'
+  if (gameId === 'cs2') return 'CS2'
+  if (gameId === 'dota2') return 'Dota 2'
+  return 'Warframe'
 }
 
 function ItemIcon({
@@ -80,6 +94,11 @@ function ItemIcon({
 }
 
 export default function SubscriptionsPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const selectedGame = searchParams.get('game') ?? 'warframe'
+
   const [mounted, setMounted] = useState(false)
   const [items, setItems] = useState<Item[]>([])
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
@@ -96,9 +115,19 @@ export default function SubscriptionsPage() {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    setSelectedItemId('')
+    setItems([])
+    setQuery('')
+    setMessage('')
+  }, [selectedGame])
+
   async function loadSubscriptions() {
     try {
-      const res = await fetch('/api/subscriptions', { cache: 'no-store' })
+      const res = await fetch(
+        `/api/subscriptions?game=${encodeURIComponent(selectedGame)}`,
+        { cache: 'no-store' }
+      )
       const data = await res.json()
       setSubscriptions(Array.isArray(data) ? data : [])
     } catch {
@@ -109,16 +138,19 @@ export default function SubscriptionsPage() {
   useEffect(() => {
     if (!mounted) return
     loadSubscriptions()
-  }, [mounted])
+  }, [mounted, selectedGame])
 
   async function searchItems() {
     setSearchLoading(true)
     setMessage('')
 
     try {
-      const res = await fetch(`/api/items?q=${encodeURIComponent(query)}`, {
-        cache: 'no-store',
-      })
+      const res = await fetch(
+        `/api/items?q=${encodeURIComponent(query)}&game=${encodeURIComponent(selectedGame)}`,
+        {
+          cache: 'no-store',
+        }
+      )
 
       const data = await res.json()
 
@@ -131,7 +163,7 @@ export default function SubscriptionsPage() {
       setItems(data.items ?? [])
 
       if (!data.items?.length) {
-        setMessage('Ничего не найдено по этому запросу')
+        setMessage('По вашему запросу ничего не найдено')
       }
     } catch {
       setItems([])
@@ -156,6 +188,7 @@ export default function SubscriptionsPage() {
           itemId: selectedItemId,
           targetPrice: Number(targetPrice),
           condition,
+          game: selectedGame,
         }),
       })
 
@@ -167,7 +200,7 @@ export default function SubscriptionsPage() {
       }
 
       setMessage(
-        'Подписка успешно создана. Уведомление отправлено в Telegram, если он привязан.'
+        'Подписка успешно создана. Уведомление будет отправлено в Telegram, если он привязан.'
       )
       setTargetPrice('')
       setSelectedItemId('')
@@ -196,7 +229,7 @@ export default function SubscriptionsPage() {
       }
 
       setMessage(
-        'Подписка удалена. Уведомление отправлено в Telegram, если он привязан.'
+        'Подписка удалена. Уведомление будет отправлено в Telegram, если он привязан.'
       )
       await loadSubscriptions()
     } catch {
@@ -204,6 +237,11 @@ export default function SubscriptionsPage() {
     } finally {
       setDeletingId(null)
     }
+  }
+
+  function handleGameChange(gameId: string, enabled: boolean) {
+    if (!enabled) return
+    router.push(`/subscriptions?game=${gameId}`)
   }
 
   if (!mounted) {
@@ -227,7 +265,7 @@ export default function SubscriptionsPage() {
             Управление подписками
           </h1>
           <p className="mt-2 text-slate-300">
-            Ищи предметы, задавай порог цены и сохраняй подписки в профиль.
+            Текущая игра: {resolveGameName(selectedGame)}
           </p>
         </div>
 
@@ -245,13 +283,44 @@ export default function SubscriptionsPage() {
             Профиль
           </Link>
           <Link
-            href="/dashboard"
+            href={`/dashboard?game=${selectedGame}`}
             className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-400"
           >
             Dashboard
           </Link>
         </div>
       </header>
+
+      <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <p className="mb-3 text-sm uppercase tracking-[0.2em] text-blue-300/80">
+          Выбор игры
+        </p>
+
+        <div className="flex flex-wrap gap-3">
+          {games.map((game) => {
+            const isSelected = selectedGame === game.id
+
+            return (
+              <button
+                key={game.id}
+                type="button"
+                disabled={!game.enabled}
+                onClick={() => handleGameChange(game.id, game.enabled)}
+                className={`rounded-2xl px-4 py-2 text-sm transition ${
+                  isSelected
+                    ? 'bg-blue-500 text-white'
+                    : game.enabled
+                      ? 'border border-white/10 bg-slate-900/70 text-slate-200 hover:bg-white/10'
+                      : 'cursor-not-allowed border border-white/10 bg-slate-900/40 text-slate-500'
+                }`}
+              >
+                {game.name}
+                {!game.enabled ? ' • скоро' : ''}
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -267,12 +336,18 @@ export default function SubscriptionsPage() {
             <button
               type="button"
               onClick={searchItems}
-              disabled={searchLoading || !query.trim()}
+              disabled={searchLoading || !query.trim() || selectedGame !== 'warframe'}
               className="rounded-2xl bg-blue-500 px-5 py-3 font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {searchLoading ? 'Поиск...' : 'Искать'}
             </button>
           </div>
+
+          {selectedGame !== 'warframe' ? (
+            <p className="mt-4 text-sm text-slate-400">
+              Для этой игры поиск пока не подключён.
+            </p>
+          ) : null}
 
           {message ? (
             <p className="mt-4 text-sm text-slate-300">{message}</p>
@@ -281,7 +356,7 @@ export default function SubscriptionsPage() {
           <div className="mt-5 space-y-3">
             {items.length === 0 ? (
               <p className="text-sm text-slate-400">
-                После поиска здесь появятся предметы из Warframe Market API.
+                После поиска здесь появятся предметы выбранной игры.
               </p>
             ) : (
               items.map((item) => (
@@ -303,7 +378,7 @@ export default function SubscriptionsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-white">{item.name}</p>
                       <p className="mt-1 text-sm text-slate-400">
-                        {item.game} • currentPrice:{' '}
+                        {item.game} • Текущая цена:{' '}
                         {item.currentPrice !== null ? item.currentPrice : '—'}
                       </p>
                     </div>
@@ -311,7 +386,7 @@ export default function SubscriptionsPage() {
 
                   <div className="px-4 pb-4">
                     <Link
-                      href={`/items/${item.externalId}`}
+                      href={`/items/${item.externalId}?game=${selectedGame}`}
                       className="inline-block text-sm text-blue-300 hover:text-blue-200"
                     >
                       Открыть страницу предмета
@@ -351,7 +426,12 @@ export default function SubscriptionsPage() {
 
               <button
                 type="submit"
-                disabled={loading || !selectedItemId || !targetPrice}
+                disabled={
+                  loading ||
+                  !selectedItemId ||
+                  !targetPrice ||
+                  selectedGame !== 'warframe'
+                }
                 className="w-full rounded-2xl bg-blue-500 px-5 py-3 font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Сохранение...' : 'Создать подписку'}
@@ -378,7 +458,7 @@ export default function SubscriptionsPage() {
             </div>
 
             {subscriptions.length === 0 ? (
-              <p className="text-slate-400">Подписок пока нет.</p>
+              <p className="text-slate-400">Подписок пока нет для этой игры.</p>
             ) : (
               <div className="space-y-4">
                 {subscriptions.map((subscription) => (
@@ -399,6 +479,7 @@ export default function SubscriptionsPage() {
                             {subscription.item.name}
                           </p>
                           <p className="text-sm text-slate-400">
+                            {subscription.item.game} •{' '}
                             {subscription.user.name ?? 'Local User'}
                           </p>
                         </div>
@@ -427,18 +508,18 @@ export default function SubscriptionsPage() {
 
                     <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
                       <span>
-                        currentPrice:{' '}
+                        Текущая цена:{' '}
                         {subscription.item.currentPrice !== null
                           ? subscription.item.currentPrice
                           : '—'}
                       </span>
                       <span>
-                        telegram:{' '}
+                        Telegram:{' '}
                         {subscription.user.telegramUsername
                           ? `@${subscription.user.telegramUsername}`
                           : subscription.user.telegramChatId ?? 'не привязан'}
                       </span>
-                      <span>created: {formatDate(subscription.createdAt)}</span>
+                      <span>Создано: {formatDate(subscription.createdAt)}</span>
                     </div>
                   </div>
                 ))}

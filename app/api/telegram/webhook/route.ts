@@ -10,6 +10,7 @@ type TelegramUpdate = {
       type?: string
     }
     from?: {
+      id?: number
       username?: string
     }
   }
@@ -42,8 +43,6 @@ async function sendTelegramMessage(chatId: string, text: string) {
 export async function POST(request: NextRequest) {
   try {
     const update = (await request.json()) as TelegramUpdate
-    console.log('Telegram update:', JSON.stringify(update, null, 2))
-
     const message = update.message
 
     if (!message?.chat || message.chat.type !== 'private') {
@@ -52,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     const text = message.text?.trim() ?? ''
     const chatId = String(message.chat.id)
+    const telegramId = message.from?.id ? String(message.from.id) : null
     const username = message.from?.username ?? message.chat.username ?? null
 
     if (text.startsWith('/start')) {
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
       await prisma.user.update({
         where: { id: user.id },
         data: {
+          telegramId: user.telegramId ?? telegramId,
           telegramChatId: chatId,
           telegramUsername: username,
           telegramLinkedAt: new Date(),
