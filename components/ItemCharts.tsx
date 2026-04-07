@@ -1,12 +1,12 @@
 'use client'
 
+import { ReactNode, useEffect, useRef, useState } from 'react'
 import {
   Area,
   AreaChart,
   CartesianGrid,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -33,6 +33,49 @@ function formatTooltipDate(value: string) {
   return new Date(value).toLocaleString('ru-RU')
 }
 
+function ChartBox({
+  height,
+  children,
+}: {
+  height: number
+  children: (size: { width: number; height: number }) => ReactNode
+}) {
+  const ref = useRef<HTMLDivElement | null>(null)
+  const [width, setWidth] = useState(0)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+
+    const updateSize = () => {
+      const nextWidth = Math.floor(element.getBoundingClientRect().width)
+      setWidth((prev) => (prev !== nextWidth ? nextWidth : prev))
+    }
+
+    updateSize()
+
+    const observer = new ResizeObserver(() => {
+      updateSize()
+    })
+
+    observer.observe(element)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      className="w-full min-w-0"
+      style={{ height: `${height}px`, minHeight: `${height}px` }}
+    >
+      {width > 0 ? children({ width, height }) : null}
+    </div>
+  )
+}
+
 export default function ItemCharts({ chart }: ItemChartsProps) {
   if (!chart || chart.length === 0) {
     return (
@@ -43,13 +86,13 @@ export default function ItemCharts({ chart }: ItemChartsProps) {
   }
 
   return (
-    <div className="grid gap-6">
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+    <div className="grid gap-6 min-w-0">
+      <section className="rounded-2xl border border-white/10 bg-white/5 p-6 min-w-0">
         <h2 className="mb-4 text-xl font-semibold text-white">График цен</h2>
 
-        <div className="h-[320px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chart}>
+        <ChartBox height={320}>
+          {({ width, height }) => (
+            <LineChart width={width} height={height} data={chart}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,0.08)"
@@ -63,7 +106,7 @@ export default function ItemCharts({ chart }: ItemChartsProps) {
               <YAxis stroke="#94a3b8" />
               <Tooltip
                 labelFormatter={(value) => formatTooltipDate(String(value))}
-                formatter={(value) => [`${value} plat`, 'Цена']}
+                formatter={(value) => [`${value}`, 'Цена']}
               />
               <Line
                 type="monotone"
@@ -73,16 +116,16 @@ export default function ItemCharts({ chart }: ItemChartsProps) {
                 dot={false}
               />
             </LineChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ChartBox>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <section className="rounded-2xl border border-white/10 bg-white/5 p-6 min-w-0">
         <h2 className="mb-4 text-xl font-semibold text-white">Объём продаж</h2>
 
-        <div className="h-[260px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chart}>
+        <ChartBox height={260}>
+          {({ width, height }) => (
+            <AreaChart width={width} height={height} data={chart}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,0.08)"
@@ -106,8 +149,8 @@ export default function ItemCharts({ chart }: ItemChartsProps) {
                 fillOpacity={0.2}
               />
             </AreaChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ChartBox>
       </section>
     </div>
   )

@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 const games = [
   { id: 'warframe', name: 'Warframe', enabled: true },
-  { id: 'cs2', name: 'CS2', enabled: false },
+  { id: 'cs2', name: 'CS2', enabled: true },
   { id: 'dota2', name: 'Dota 2', enabled: false },
 ]
 

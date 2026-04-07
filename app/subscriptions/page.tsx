@@ -2,9 +2,10 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getEnabledGameProvider } from '@/lib/games/game-registry'
+import { getGameProvider } from '@/lib/games/game-registry'
+import { getGameDisplayConfig } from '@/lib/games/game-display'
 
 type Item = {
   id: string
@@ -38,7 +39,7 @@ type Subscription = {
 
 const games = [
   { id: 'warframe', name: 'Warframe', enabled: true },
-  { id: 'cs2', name: 'CS2', enabled: false },
+  { id: 'cs2', name: 'CS2', enabled: true },
   { id: 'dota2', name: 'Dota 2', enabled: false },
 ]
 
@@ -50,7 +51,7 @@ function formatDate(value: string) {
 }
 
 function getImageUrl(path?: string | null, gameId: string = 'warframe') {
-  const provider = getEnabledGameProvider(gameId)
+  const provider = getGameProvider(gameId)
   if (!provider) return path ?? null
   return provider.getImageUrl(path)
 }
@@ -66,12 +67,14 @@ function ItemIcon({
   src,
   alt,
   size = 56,
+  gameId = 'warframe',
 }: {
   src?: string | null
   alt: string
   size?: number
+  gameId?: string
 }) {
-  const imageUrl = getImageUrl(src)
+  const imageUrl = getImageUrl(src, gameId)
 
   return (
     <div
@@ -99,6 +102,7 @@ export default function SubscriptionsPage() {
   const router = useRouter()
 
   const selectedGame = searchParams.get('game') ?? 'warframe'
+  const display = useMemo(() => getGameDisplayConfig(selectedGame), [selectedGame])
 
   const [mounted, setMounted] = useState(false)
   const [items, setItems] = useState<Item[]>([])
@@ -129,6 +133,12 @@ export default function SubscriptionsPage() {
         `/api/subscriptions?game=${encodeURIComponent(selectedGame)}`,
         { cache: 'no-store' }
       )
+
+      if (res.status === 401) {
+        router.push('/login?error=unauthorized')
+        return
+      }
+
       const data = await res.json()
       setSubscriptions(Array.isArray(data) ? data : [])
     } catch {
@@ -268,6 +278,9 @@ export default function SubscriptionsPage() {
           <p className="mt-2 text-slate-300">
             Текущая игра: {resolveGameName(selectedGame)}
           </p>
+          {display.sourceLabel ? (
+            <p className="mt-1 text-sm text-slate-400">{display.sourceLabel}</p>
+          ) : null}
         </div>
 
         <div className="flex gap-3">
@@ -331,24 +344,22 @@ export default function SubscriptionsPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Например: revenant prime"
+              placeholder={
+                selectedGame === 'cs2'
+                  ? 'Например: AK-47 | Redline'
+                  : 'Например: revenant prime'
+              }
               className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500"
             />
             <button
               type="button"
               onClick={searchItems}
-              disabled={searchLoading || !query.trim() || selectedGame !== 'warframe'}
+              disabled={searchLoading || !query.trim()}
               className="rounded-2xl bg-blue-500 px-5 py-3 font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {searchLoading ? 'Поиск...' : 'Искать'}
             </button>
           </div>
-
-          {selectedGame !== 'warframe' ? (
-            <p className="mt-4 text-sm text-slate-400">
-              Для этой игры поиск пока не подключён.
-            </p>
-          ) : null}
 
           {message ? (
             <p className="mt-4 text-sm text-slate-300">{message}</p>
@@ -374,13 +385,18 @@ export default function SubscriptionsPage() {
                     onClick={() => setSelectedItemId(item.id)}
                     className="flex w-full items-start gap-4 p-4 text-left"
                   >
-                    <ItemIcon src={item.icon} alt={item.name} size={60} />
+                    <ItemIcon
+                      src={item.icon}
+                      alt={item.name}
+                      size={60}
+                      gameId={selectedGame}
+                    />
 
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-white">{item.name}</p>
                       <p className="mt-1 text-sm text-slate-400">
                         {item.game} • Текущая цена:{' '}
-                        {item.currentPrice !== null ? item.currentPrice : '—'}
+                        {display.formatPrice(item.currentPrice)}
                       </p>
                     </div>
                   </button>
@@ -416,6 +432,12 @@ export default function SubscriptionsPage() {
                 className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500"
               />
 
+              {targetPrice ? (
+                <p className="text-sm text-slate-400">
+                  Будет сохранено как: {display.formatPrice(Number(targetPrice))}
+                </p>
+              ) : null}
+
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value)}
@@ -427,12 +449,7 @@ export default function SubscriptionsPage() {
 
               <button
                 type="submit"
-                disabled={
-                  loading ||
-                  !selectedItemId ||
-                  !targetPrice ||
-                  selectedGame !== 'warframe'
-                }
+                disabled={loading || !selectedItemId || !targetPrice}
                 className="w-full rounded-2xl bg-blue-500 px-5 py-3 font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Сохранение...' : 'Создать подписку'}
@@ -473,6 +490,7 @@ export default function SubscriptionsPage() {
                           src={subscription.item.icon}
                           alt={subscription.item.name}
                           size={56}
+                          gameId={selectedGame}
                         />
 
                         <div>
@@ -487,10 +505,10 @@ export default function SubscriptionsPage() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <div className="text-sm text-slate-300">
+                        <div className="text-sm text-slate-300 text-nowrap">
                           <span className="font-medium text-blue-300">
                             {subscription.condition === 'lte' ? '≤' : '≥'}{' '}
-                            {subscription.targetPrice}
+                            {display.formatPrice(subscription.targetPrice)}
                           </span>
                         </div>
 
@@ -509,16 +527,7 @@ export default function SubscriptionsPage() {
 
                     <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
                       <span>
-                        Текущая цена:{' '}
-                        {subscription.item.currentPrice !== null
-                          ? subscription.item.currentPrice
-                          : '—'}
-                      </span>
-                      <span>
-                        Telegram:{' '}
-                        {subscription.user.telegramUsername
-                          ? `@${subscription.user.telegramUsername}`
-                          : subscription.user.telegramChatId ?? 'не привязан'}
+                        Текущая цена: {display.formatPrice(subscription.item.currentPrice)}
                       </span>
                       <span>Создано: {formatDate(subscription.createdAt)}</span>
                     </div>

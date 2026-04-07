@@ -1,38 +1,22 @@
-import { GameProvider, GameId } from '@/lib/games/types'
+import { GameProvider } from '@/lib/games/types'
 import { WarframeProvider } from '@/lib/games/warframe-provider'
+import { Cs2Provider } from '@/lib/games/cs2-provider'
 
-const providers: Record<GameId, GameProvider | null> = {
-  warframe: new WarframeProvider(),
-  cs2: null,
-  dota2: null,
+const providers: GameProvider[] = [
+  new WarframeProvider(),
+  new Cs2Provider(),
+]
+
+export function getGameProvider(gameId: string) {
+  return providers.find((provider) => provider.gameId === gameId) ?? null
 }
 
-export function resolveGameId(value: string | null | undefined): GameId {
-  const normalized = (value ?? 'warframe').trim().toLowerCase()
-
-  if (normalized === 'warframe') return 'warframe'
-  if (normalized === 'cs2') return 'cs2'
-  if (normalized === 'dota2') return 'dota2'
-
-  return 'warframe'
-}
-
-export function getGameProvider(
-  gameId: string | null | undefined
-): GameProvider | null {
-  const resolved = resolveGameId(gameId)
-  return providers[resolved]
-}
-
-export function getEnabledGameProvider(
-  gameId: string | null | undefined
-): GameProvider | null {
+export function getEnabledGameProvider(gameId: string) {
   const provider = getGameProvider(gameId)
-  if (!provider || !provider.enabled) return null
+  if (!provider?.enabled) return null
   return provider
 }
 
-export function getGameLabel(gameId: string | null | undefined): string | null {
-  const provider = getGameProvider(gameId)
-  return provider?.gameLabel ?? null
+export function getEnabledGameProviders() {
+  return providers.filter((provider) => provider.enabled)
 }

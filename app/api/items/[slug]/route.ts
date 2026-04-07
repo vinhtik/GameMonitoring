@@ -1,40 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getEnabledGameProvider } from '@/lib/games/game-registry'
+import { loadGameItemDetails } from '@/lib/games/load-game-item-details'
 
-type RouteContext = {
-  params: Promise<{
-    slug: string
-  }>
-}
-
-export async function GET(request: NextRequest, context: RouteContext) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
   try {
     const { slug } = await context.params
-    const gameParam = request.nextUrl.searchParams.get('game')
-    const provider = getEnabledGameProvider(gameParam)
+    const game = request.nextUrl.searchParams.get('game') ?? 'warframe'
 
-    if (!provider) {
+    const result = await loadGameItemDetails(game, slug)
+
+    if (!result.ok) {
       return NextResponse.json(
-        { error: 'Game provider is not available' },
-        { status: 404 }
+        { error: result.error },
+        { status: result.status }
       )
     }
 
-    const data = await provider.getItem(slug)
-
-    if (!data) {
-      return NextResponse.json(
-        { error: 'Failed to load item' },
-        { status: 502 }
-      )
-    }
-
-    return NextResponse.json(data)
+    return NextResponse.json(result.data)
   } catch (error) {
     console.error('GET /api/items/[slug] error:', error)
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to load item details' },
       { status: 500 }
     )
   }
