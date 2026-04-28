@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     if (currentUser.vkPeerId) {
       try {
-        await sendvkMessage(currentUser.vkPeerId, text)
+        await sendVkMessage(currentUser.vkPeerId, text)
       } catch (error) {
         console.error(
           'Failed to send vk subscription-created message:',
@@ -230,7 +230,7 @@ export async function DELETE(request: NextRequest) {
 
     if (currentUser.vkPeerId) {
       try {
-        await sendvkMessage(currentUser.vkPeerId, text)
+        await sendVkMessage(currentUser.vkPeerId, text)
       } catch (error) {
         console.error(
           'Failed to send vk subscription-deleted message:',
