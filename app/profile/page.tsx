@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation'
 type Profile = {
   id: string
   name: string | null
+  email: string
   vkId: string | null
-  vkChatId: string | null
+  vkPeerId: string | null
   vkUsername: string | null
   vkLinkedAt: string | null
 }

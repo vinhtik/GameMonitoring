@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/current-user'
-import { sendTelegramMessage } from '@/lib/vk'
+import { sendVkMessage } from '@/lib/vk'
 
 function conditionLabel(condition: string, targetPrice: number) {
   return `${condition === 'lte' ? '≤' : '≥'} ${targetPrice}`
@@ -144,12 +144,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (currentUser.telegramChatId) {
+    if (currentUser.vkPeerId) {
       try {
-        await sendTelegramMessage(currentUser.telegramChatId, text)
+        await sendvkMessage(currentUser.vkPeerId, text)
       } catch (error) {
         console.error(
-          'Failed to send Telegram subscription-created message:',
+          'Failed to send vk subscription-created message:',
           error
         )
       }
@@ -228,12 +228,12 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    if (currentUser.telegramChatId) {
+    if (currentUser.vkPeerId) {
       try {
-        await sendTelegramMessage(currentUser.telegramChatId, text)
+        await sendvkMessage(currentUser.vkPeerId, text)
       } catch (error) {
         console.error(
-          'Failed to send Telegram subscription-deleted message:',
+          'Failed to send vk subscription-deleted message:',
           error
         )
       }

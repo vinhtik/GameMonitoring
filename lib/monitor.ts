@@ -61,7 +61,7 @@ export async function runMonitor() {
     }
 
     console.log(
-      `Checking subscription ${subscription.id}: game="${subscription.item.game}", item="${subscription.item.name}", externalId="${externalId}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, VkChatId=${subscription.user.vkPeerId}`
+      `Checking subscription ${subscription.id}: game="${subscription.item.game}", item="${subscription.item.name}", externalId="${externalId}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, vkPeerId=${subscription.user.vkPeerId}`
     )
 
     if (currentPrice === null || currentPrice === undefined) {
