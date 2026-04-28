@@ -61,7 +61,7 @@ export async function runMonitor() {
     }
 
     console.log(
-      `Checking subscription ${subscription.id}: game="${subscription.item.game}", item="${subscription.item.name}", externalId="${externalId}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, VkChatId=${subscription.user.VkChatId}`
+      `Checking subscription ${subscription.id}: game="${subscription.item.game}", item="${subscription.item.name}", externalId="${externalId}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, VkChatId=${subscription.user.vkChatId}`
     )
 
     if (currentPrice === null || currentPrice === undefined) {
@@ -80,7 +80,7 @@ export async function runMonitor() {
       continue
     }
 
-    if (!subscription.user.VkChatId) {
+    if (!subscription.user.vkChatId) {
       console.log(`Skip ${subscription.id}: Vk is not linked`)
       continue
     }
@@ -113,7 +113,7 @@ export async function runMonitor() {
       `Условие: ${subscription.condition === 'lte' ? '≤' : '≥'} ${subscription.targetPrice}`
 
     try {
-      await sendVkMessage(subscription.user.VkChatId, triggerMessage)
+      await sendVkMessage(subscription.user.vkChatId, triggerMessage)
       console.log(`Vk message sent for subscription ${subscription.id}`)
     } catch (error) {
       console.error(
