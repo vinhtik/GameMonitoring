@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/current-user'
-import { sendTelegramMessage } from '@/lib/telegram'
+import { sendTelegramMessage } from '@/lib/vk'
 
 function conditionLabel(condition: string, targetPrice: number) {
   return `${condition === 'lte' ? '≤' : '≥'} ${targetPrice}`

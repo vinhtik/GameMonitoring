@@ -1,50 +1,38 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const errorMap: Record<string, string> = {
-  invalid_credentials: 'Неверный email или пароль.',
-  server_error: 'Ошибка сервера при входе.',
-  unauthorized: 'Сначала нужно войти в аккаунт.',
-  registered: 'Аккаунт создан. Теперь можно войти.',
-}
-
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter()
 
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordRepeat, setPasswordRepeat] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const error = params.get('error')
-    const info = params.get('info')
-
-    if (error) {
-      setMessage(errorMap[error] ?? 'Ошибка входа.')
-    }
-
-    if (info) {
-      setMessage(errorMap[info] ?? '')
-    }
-  }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
     setMessage('')
 
+    if (password !== passwordRepeat) {
+      setMessage('Пароли не совпадают.')
+      setLoading(false)
+      return
+    }
+
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          name,
           email,
           password,
         }),
@@ -53,7 +41,7 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setMessage(data.error ?? 'Не удалось войти в аккаунт.')
+        setMessage(data.error ?? 'Не удалось создать аккаунт.')
         return
       }
 
@@ -74,19 +62,31 @@ export default function LoginPage() {
             Auth
           </p>
 
-          <h1 className="mb-4 text-3xl font-bold">Вход в аккаунт</h1>
+          <h1 className="mb-4 text-3xl font-bold">Регистрация</h1>
 
           <p className="mb-6 text-sm leading-6 text-slate-300">
-            Войдите в аккаунт, чтобы управлять подписками и получать уведомления через VK.
+            Создайте аккаунт, чтобы сохранять подписки и подключить VK для уведомлений.
           </p>
 
           {message ? (
-            <div className="mb-5 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
+            <div className="mb-5 rounded-2xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-100">
               {message}
             </div>
           ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="block">
+              <span className="mb-2 block text-sm text-slate-300">Имя</span>
+              <input
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                autoComplete="name"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                placeholder="Ваше имя"
+              />
+            </label>
+
             <label className="block">
               <span className="mb-2 block text-sm text-slate-300">Email</span>
               <input
@@ -107,9 +107,26 @@ export default function LoginPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
-                autoComplete="current-password"
+                minLength={6}
+                autoComplete="new-password"
                 className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
-                placeholder="Введите пароль"
+                placeholder="Минимум 6 символов"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm text-slate-300">
+                Повторите пароль
+              </span>
+              <input
+                type="password"
+                value={passwordRepeat}
+                onChange={(event) => setPasswordRepeat(event.target.value)}
+                required
+                minLength={6}
+                autoComplete="new-password"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                placeholder="Повторите пароль"
               />
             </label>
 
@@ -118,7 +135,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-2xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Вход...' : 'Войти'}
+              {loading ? 'Создание...' : 'Создать аккаунт'}
             </button>
           </form>
 
@@ -127,8 +144,8 @@ export default function LoginPage() {
               На главную
             </Link>
 
-            <Link href="/register" className="text-cyan-300 hover:text-cyan-200">
-              Зарегистрироваться
+            <Link href="/login" className="text-cyan-300 hover:text-cyan-200">
+              Уже есть аккаунт
             </Link>
           </div>
         </div>

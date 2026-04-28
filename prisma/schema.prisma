@@ -10,11 +10,13 @@ datasource db {
 model User {
   id                String         @id @default(cuid())
   name              String?
-  telegramId        String?        @unique
-  telegramChatId    String?        @unique
-  telegramUsername  String?
-  telegramLinkToken String?        @unique
-  telegramLinkedAt  DateTime?
+  email             String?
+  password          String         @unique
+  vkId        String?        @unique
+  vkChatId    String?        @unique
+  vkUsername  String?
+  vkLinkToken String?        @unique
+  vkLinkedAt  DateTime?
   subscriptions     Subscription[]
   notifications     Notification[]
   sessions          Session[]

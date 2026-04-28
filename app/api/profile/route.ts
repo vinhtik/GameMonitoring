@@ -2,15 +2,39 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/current-user'
 import { prisma } from '@/lib/prisma'
 
+function publicUserSelect() {
+  return {
+    id: true,
+    name: true,
+    email: true,
+    vkId: true,
+    vkPeerId: true,
+    vkUsername: true,
+    vkLinkedAt: true,
+    createdAt: true,
+    updatedAt: true,
+  } as const
+}
+
 export async function GET() {
   try {
     const user = await getCurrentUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    return NextResponse.json(user)
+    const profile = await prisma.user.findUnique({
+      where: {
+        id: user.id,
+      },
+      select: publicUserSelect(),
+    })
+
+    return NextResponse.json(profile)
   } catch (error) {
     console.error('GET /api/profile error:', error)
 
@@ -24,19 +48,28 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
+
     const currentUser = await getCurrentUser()
 
     if (!currentUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    const name = typeof body.name === 'string' ? body.name.trim() : undefined
+    const name = typeof body.name === 'string'
+      ? body.name.trim()
+      : undefined
 
     const updated = await prisma.user.update({
-      where: { id: currentUser.id },
-      data: {
-        ...(name !== undefined ? { name } : {}),
+      where: {
+        id: currentUser.id,
       },
+      data: {
+        ...(name !== undefined ? { name: name || null } : {}),
+      },
+      select: publicUserSelect(),
     })
 
     return NextResponse.json(updated)
@@ -49,3 +82,4 @@ export async function PATCH(request: NextRequest) {
     )
   }
 }
+

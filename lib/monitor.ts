@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { sendTelegramMessage } from '@/lib/telegram'
+import { sendVkMessage } from '@/lib/vk'
 import { getGameProvider } from '@/lib/games/game-registry'
 
 function checkCondition(
@@ -61,7 +61,7 @@ export async function runMonitor() {
     }
 
     console.log(
-      `Checking subscription ${subscription.id}: game="${subscription.item.game}", item="${subscription.item.name}", externalId="${externalId}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, telegramChatId=${subscription.user.telegramChatId}`
+      `Checking subscription ${subscription.id}: game="${subscription.item.game}", item="${subscription.item.name}", externalId="${externalId}", currentPrice=${currentPrice}, target=${subscription.targetPrice}, condition=${subscription.condition}, VkChatId=${subscription.user.VkChatId}`
     )
 
     if (currentPrice === null || currentPrice === undefined) {
@@ -80,8 +80,8 @@ export async function runMonitor() {
       continue
     }
 
-    if (!subscription.user.telegramChatId) {
-      console.log(`Skip ${subscription.id}: Telegram is not linked`)
+    if (!subscription.user.VkChatId) {
+      console.log(`Skip ${subscription.id}: Vk is not linked`)
       continue
     }
 
@@ -113,11 +113,11 @@ export async function runMonitor() {
       `Условие: ${subscription.condition === 'lte' ? '≤' : '≥'} ${subscription.targetPrice}`
 
     try {
-      await sendTelegramMessage(subscription.user.telegramChatId, triggerMessage)
-      console.log(`Telegram message sent for subscription ${subscription.id}`)
+      await sendVkMessage(subscription.user.VkChatId, triggerMessage)
+      console.log(`Vk message sent for subscription ${subscription.id}`)
     } catch (error) {
       console.error(
-        `Failed to send Telegram message for subscription ${subscription.id}:`,
+        `Failed to send Vk message for subscription ${subscription.id}:`,
         error
       )
       continue
