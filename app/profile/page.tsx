@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation'
 type Profile = {
   id: string
   name: string | null
-  telegramId: string | null
-  telegramChatId: string | null
-  telegramUsername: string | null
-  telegramLinkedAt: string | null
+  vkId: string | null
+  vkChatId: string | null
+  vkUsername: string | null
+  vkLinkedAt: string | null
 }
 
 function formatDate(value: string) {
@@ -26,7 +26,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
-  const [telegramLink, setTelegramLink] = useState('')
+  const [vkLink, setvkLink] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -97,11 +97,11 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleGenerateTelegramLink() {
+  async function handleGeneratevkLink() {
     setMessage('')
 
     try {
-      const res = await fetch('/api/telegram/link', {
+      const res = await fetch('/api/vk/link', {
         method: 'POST',
       })
 
@@ -117,10 +117,10 @@ export default function ProfilePage() {
         return
       }
 
-      setTelegramLink(data.link)
+      setvkLink(data.link)
       setMessage('Ссылка для привязки создана')
     } catch {
-      setMessage('Ошибка генерации Telegram-ссылки')
+      setMessage('Ошибка генерации vk-ссылки')
     }
   }
 
@@ -166,7 +166,7 @@ export default function ProfilePage() {
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">Профиль</h1>
           <p className="mt-2 text-slate-300">
-            Здесь настраивается имя и привязка Telegram для уведомлений.
+            Здесь настраивается имя и привязка vk для уведомлений.
           </p>
         </div>
 
@@ -217,26 +217,26 @@ export default function ProfilePage() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">Telegram</h2>
+          <h2 className="text-xl font-semibold text-white">vk</h2>
 
           <div className="mt-5 space-y-3 text-sm text-slate-300">
             <p>
-              Статус: {profile?.telegramId ? 'вход через Telegram выполнен' : 'не авторизован'}
+              Статус: {profile?.vkId ? 'вход через vk выполнен' : 'не авторизован'}
             </p>
 
             <p>
               Username:{' '}
-              {profile?.telegramUsername ? `@${profile.telegramUsername}` : '—'}
+              {profile?.vkUsername ? `@${profile.vkUsername}` : '—'}
             </p>
 
             <p>
-              Chat ID: {profile?.telegramChatId ?? '—'}
+              Chat ID: {profile?.vkChatId ?? '—'}
             </p>
 
             <p>
               Привязан:{' '}
-              {profile?.telegramLinkedAt
-                ? formatDate(profile.telegramLinkedAt)
+              {profile?.vkLinkedAt
+                ? formatDate(profile.vkLinkedAt)
                 : '—'}
             </p>
           </div>
@@ -244,20 +244,20 @@ export default function ProfilePage() {
           <div className="mt-5 space-y-3">
             <button
               type="button"
-              onClick={handleGenerateTelegramLink}
+              onClick={handleGeneratevkLink}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-medium text-slate-200 transition hover:bg-white/10"
             >
-              Создать ссылку для привязки Telegram-бота
+              Создать ссылку для привязки vk-бота
             </button>
 
-            {telegramLink ? (
+            {vkLink ? (
               <a
-                href={telegramLink}
+                href={vkLink}
                 target="_blank"
                 rel="noreferrer"
                 className="block break-all rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-200"
               >
-                {telegramLink}
+                {vkLink}
               </a>
             ) : null}
           </div>
