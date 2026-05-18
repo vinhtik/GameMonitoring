@@ -58,9 +58,6 @@ export default function RegisterPage() {
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
-          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300">
-            Auth
-          </p>
 
           <h1 className="mb-4 text-3xl font-bold">Регистрация</h1>
 
@@ -82,7 +79,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 autoComplete="name"
-                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 placeholder="Ваше имя"
               />
             </label>
@@ -95,7 +92,7 @@ export default function RegisterPage() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 autoComplete="email"
-                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 placeholder="user@example.com"
               />
             </label>
@@ -109,7 +106,7 @@ export default function RegisterPage() {
                 required
                 minLength={6}
                 autoComplete="new-password"
-                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 placeholder="Минимум 6 символов"
               />
             </label>
@@ -125,7 +122,7 @@ export default function RegisterPage() {
                 required
                 minLength={6}
                 autoComplete="new-password"
-                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 placeholder="Повторите пароль"
               />
             </label>
@@ -133,7 +130,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-2xl bg-blue-500 px-5 py-3 font-semibold text-white-950 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Создание...' : 'Создать аккаунт'}
             </button>
@@ -144,7 +141,7 @@ export default function RegisterPage() {
               На главную
             </Link>
 
-            <Link href="/login" className="text-cyan-300 hover:text-cyan-200">
+            <Link href="/login" className="text-blue-300 hover:text-blue-200">
               Уже есть аккаунт
             </Link>
           </div>

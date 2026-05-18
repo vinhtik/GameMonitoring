@@ -70,9 +70,6 @@ export default function LoginPage() {
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
-          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300">
-            Auth
-          </p>
 
           <h1 className="mb-4 text-3xl font-bold">Вход в аккаунт</h1>
 
@@ -81,7 +78,7 @@ export default function LoginPage() {
           </p>
 
           {message ? (
-            <div className="mb-5 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
+            <div className="mb-5 rounded-2xl border border-blue-400/30 bg-blue-400/10 px-4 py-3 text-sm text-blue-100">
               {message}
             </div>
           ) : null}
@@ -95,7 +92,7 @@ export default function LoginPage() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 autoComplete="email"
-                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 placeholder="user@example.com"
               />
             </label>
@@ -108,7 +105,7 @@ export default function LoginPage() {
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 placeholder="Введите пароль"
               />
             </label>
@@ -116,7 +113,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-2xl bg-blue-500 px-5 py-3 font-semibold text-white-950 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Вход...' : 'Войти'}
             </button>
@@ -127,7 +124,7 @@ export default function LoginPage() {
               На главную
             </Link>
 
-            <Link href="/register" className="text-cyan-300 hover:text-cyan-200">
+            <Link href="/register" className="text-blue-300 hover:text-blue-200">
               Зарегистрироваться
             </Link>
           </div>

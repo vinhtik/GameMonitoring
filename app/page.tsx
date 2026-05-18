@@ -53,7 +53,7 @@ export default function Home() {
       <section className="grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <span className="inline-flex rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1 text-sm text-blue-200">
-            Веб-приложение + Telegram уведомления
+            Веб-приложение + Vk уведомления
           </span>
 
           <h2 className="mt-6 text-4xl font-bold leading-tight text-white md:text-5xl">
@@ -62,7 +62,7 @@ export default function Home() {
 
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">
             Платформа получает данные из внешних API, сохраняет их в базе,
-            сравнивает с условиями подписок и отправляет уведомления в Telegram,
+            сравнивает с условиями подписок и отправляет уведомления в Vk,
             когда цена достигает нужного значения.
           </p>
 
@@ -153,7 +153,7 @@ export default function Home() {
               <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4">
                 <p className="text-sm text-blue-200">Последнее событие</p>
                 <p className="mt-1 font-medium text-white">
-                  Telegram-уведомление отправляется автоматически, когда цена достигает заданного порога
+                  Vk-уведомление отправляется автоматически, когда цена достигает заданного порога
                 </p>
               </div>
             </div>
@@ -253,10 +253,10 @@ export default function Home() {
             id="start"
           >
             <h3 className="text-lg font-semibold text-white">
-              Telegram-уведомления
+              Vk-уведомления
             </h3>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Telegram используется как канал доставки уведомлений, когда система фиксирует нужное рыночное событие.
+              Vk используется как канал доставки уведомлений, когда система фиксирует нужное рыночное событие.
             </p>
           </div>
         </div>
